@@ -114,19 +114,21 @@ const TimingBar = ({ timings }) => {
     const ownTotalDuration = timings.reduce((sum, t) => sum + Math.max(t.duration, 0), 0);
     if (ownTotalDuration <= 0) return null;
 
-    const minElementDuration = 1;
-    const effectiveTotalDuration = Math.max(ownTotalDuration, minElementDuration * timings.length);
-
     return html`
         <div style=${{ display: 'flex', height: '24px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', overflow: 'hidden', width: '100%', borderRadius: '4px' }}>
             ${timings.map((t, idx) => {
         const duration = Math.max(t.duration, 0);
-        const percentage = (duration / effectiveTotalDuration) * 100;
+        const percentage = (duration / ownTotalDuration) * 100;
         const isMark = t.type === 'mark';
+
+        // Enforce a minimum width so thin elements (especially gaps) remain visible
+        const minWidth = percentage > 0 ? (isMark ? '1px' : '3px') : '0';
+
         return html`
                     <div key=${idx} style=${{
+                flex: `0 0 ${percentage}%`,
                 width: percentage + '%',
-                minWidth: percentage > 0 && percentage < 0.5 ? '1px' : 'auto',
+                minWidth: minWidth,
                 height: '100%',
                 backgroundColor: isMark ? 'var(--blue)' : 'var(--bg-color)',
                 opacity: isMark ? 0.9 : 1
