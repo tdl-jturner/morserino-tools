@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import htm from 'htm';
 import { useSettings } from './Settings.js';
-import { Decoder, morseToAlphabet } from '../lib/decoder.js?v=9';
+import { Decoder, morseToAlphabet } from '../lib/decoder.js';
 import { Keyer } from '../lib/keyer.js';
 import { Sounder } from '../lib/sounder.js';
 
@@ -9,6 +9,55 @@ window.restartAudioNeeded = () => false;
 window.restartAudio = () => { };
 
 const html = htm.bind(React.createElement);
+
+// Practice text definitions for guided CW Practice modes.
+const practiceTexts = {
+    aazz: {
+        label: 'AAZZ - Letter Pairs',
+        text: 'AAABAC ADAEAF AGAHAI AJAKAL '
+            + 'AMANAO APAQAR ASATAU AVAWAX AYAZ '
+            + 'BBBCBD BEBFBG BHBIBJ BKBLBM '
+            + 'BNBOBP BQBRBS BTBUBV BWBXBY BZ '
+            + 'CCCDCE CFCGCH CICJCK CLCMCN '
+            + 'COCPCQ CRCSCT CUCVCW CXCYCZ '
+            + 'DDDEDF DGDHDI DJDKDL DMDNDO '
+            + 'DPDQDR DSDTDU DVDWDX DYDZ '
+            + 'EEEFEG EHEIEJ EKELEM ENEOEP '
+            + 'EQERES ETEUEV EWEXEY EZ '
+            + 'FFFGFH FIFJFK FLFMFN FOFPFQ '
+            + 'FRFSFT FUFVFW FXFYFZ '
+            + 'GGGHGI GJGKGL GMGNGO GPGQGR '
+            + 'GSGTGU GVGWGX GYGZ '
+            + 'HHHIHJ HKHLHM HNHOHP HQHRHS '
+            + 'HTHUHV HWHXHY HZ '
+            + 'IIIJIK ILIMIN IOIPIQ IRISIT '
+            + 'IUIVIW IXIYIZ '
+            + 'JJJKJL JMJNJO JPJQJR JSJTJU '
+            + 'JVJWJX JYJZ '
+            + 'KKKLKM KNKOKP KQKRKS KTKUKV '
+            + 'KWKXKY KZ '
+            + 'LLLMLN LOLPLQ LRLSLT LULVLW '
+            + 'LXLYLZ '
+            + 'MMMNMO MPMQMR MSMTMU MVMWMX MYMZ '
+            + 'NNNONP NQNRNS NTNUNV NWNXNY NZ '
+            + 'OOOPOQ OROSOT OUOVOW OXOYOZ '
+            + 'PPPQPR PSPTPU PVPWPX PYPZ '
+            + 'QQQRQS QTQUQV QWQXQY QZ '
+            + 'RRRSRT RURVRW RXRYRZ '
+            + 'SSSTSU SVSWSX SYSZ '
+            + 'TTTUTV TWTXTY TZ '
+            + 'UUUVUW UXUYUZ '
+            + 'VVVWVX VYVZ '
+            + 'WWWXWY WZ '
+            + 'XXXYXZ '
+            + 'YYYZ '
+            + 'ZZ'
+    },
+    bensbest: {
+        label: "Ben's Best",
+        text: 'BENS BEST BENT WIRE'
+    }
+};
 
 const ditdahMap = {};
 for (const [morse, letter] of morseToAlphabet.entries()) {
@@ -68,9 +117,64 @@ const TimingBar = ({ timings }) => {
     `;
 };
 
+// ---- Guided Mode Sub-component ----
+function formatElapsed(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes > 0) {
+        return minutes + 'm ' + seconds + 's';
+    }
+    return seconds + 's';
+}
+
+function GuidedDisplay({ groups, groupIndex, charIndex, results, retrying, elapsedMs, drillLabel, complete }) {
+    if (!groups || groups.length === 0) return null;
+
+    if (complete) {
+        // All done!
+        return html`
+            <div style=${{ padding: '2rem', textAlign: 'center' }}>
+                <h3 style=${{ color: 'var(--green)', marginBottom: '1rem' }}>✓ Complete!</h3>
+                <p style=${{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>You've completed <strong>${drillLabel}</strong> in <strong>${formatElapsed(elapsedMs)}</strong>.</p>
+            </div>
+        `;
+    }
+
+    const currentGroup = groups[groupIndex];
+    if (!currentGroup) return null;
+
+    // Build the display for the current group
+    const letters = currentGroup.split('');
+
+    return html`
+        <div style=${{ fontFamily: 'var(--font-mono)', fontSize: '2rem', letterSpacing: '4px', minHeight: '80px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '2px' }}>
+            ${letters.map((ch, idx) => {
+        let color = 'var(--base01)'; // Upcoming: dim
+        if (idx < charIndex) {
+            // Already answered
+            color = results[idx] ? 'var(--green)' : 'var(--red)';
+        } else if (idx === charIndex && !retrying) {
+            color = 'var(--accent-color)'; // Current: highlighted
+        }
+        return html`<span key=${idx} style=${{ color, fontWeight: idx === charIndex && !retrying ? 'bold' : 'normal', textDecoration: idx === charIndex && !retrying ? 'underline' : 'none' }}>${ch}</span>`;
+    })}
+        </div>
+        ${retrying ? html`
+            <div style=${{ marginTop: '0.75rem', fontSize: '1rem', color: 'var(--yellow)', fontWeight: 'bold' }}>
+                ✗ Try again...
+            </div>
+        ` : html`
+            <div style=${{ marginTop: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Group ${groupIndex + 1} of ${groups.length}
+            </div>
+        `}
+    `;
+}
+
 export default function CwPractice() {
     const [settings] = useSettings();
-    const [practiceMode, setPracticeMode] = useState('open'); // Dropdown for "mode" -> Open
+    const [practiceMode, setPracticeMode] = useState('open');
     const [input, setInput] = useState('');
     const [calculatedWpm, setCalculatedWpm] = useState('--');
     const [showTiming, setShowTiming] = useState(false);
@@ -84,6 +188,58 @@ export default function CwPractice() {
     // Graphical timings for the last letter
     const [lastTimings, setLastTimings] = useState({ actual: [], ideal: [] });
 
+    // --- Guided mode state ---
+    const [guidedGroups, setGuidedGroups] = useState([]);
+    const [guidedGroupIndex, setGuidedGroupIndex] = useState(0);
+    const [guidedCharIndex, setGuidedCharIndex] = useState(0);
+    const [guidedResults, setGuidedResults] = useState([]); // array of booleans per char in current group
+    const [guidedComplete, setGuidedComplete] = useState(false);
+    const [guidedRetrying, setGuidedRetrying] = useState(false);
+    const guidedStartTimeRef = useRef(null);
+    const [guidedElapsedMs, setGuidedElapsedMs] = useState(0);
+    const [guidedRunningTime, setGuidedRunningTime] = useState(0);
+    const guidedTimerRef = useRef(null);
+
+    // Start/stop the running timer interval
+    const startRunningTimer = () => {
+        if (guidedTimerRef.current) return; // already running
+        guidedTimerRef.current = setInterval(() => {
+            if (guidedStartTimeRef.current) {
+                setGuidedRunningTime(Date.now() - guidedStartTimeRef.current);
+            }
+        }, 1000);
+    };
+    const stopRunningTimer = () => {
+        if (guidedTimerRef.current) {
+            clearInterval(guidedTimerRef.current);
+            guidedTimerRef.current = null;
+        }
+    };
+
+    // Ref so the decoder callback can always read the latest guided state
+    const guidedStateRef = useRef({
+        mode: 'open',
+        groups: [],
+        groupIndex: 0,
+        charIndex: 0,
+        results: [],
+        complete: false,
+        retrying: false
+    });
+
+    // Keep ref in sync
+    useEffect(() => {
+        guidedStateRef.current = {
+            mode: practiceMode,
+            groups: guidedGroups,
+            groupIndex: guidedGroupIndex,
+            charIndex: guidedCharIndex,
+            results: guidedResults,
+            complete: guidedComplete,
+            retrying: guidedRetrying
+        };
+    }, [practiceMode, guidedGroups, guidedGroupIndex, guidedCharIndex, guidedResults, guidedComplete, guidedRetrying]);
+
     // Refs to hold mutable tool instances
     const decoderRef = useRef(null);
     const keyerRef = useRef(null);
@@ -95,21 +251,83 @@ export default function CwPractice() {
         settingsRef.current = settings;
     }, [settings]);
 
+    // Handle incoming decoded letter (called from decoder callback)
+    const handleDecodedLetter = useCallback((letter, decoder) => {
+        updateStats(decoder);
+
+        if (letter && letter.trim()) {
+            const wpmToUse = settingsRef.current.wpm;
+            const ideal = getIdealTiming(letter, wpmToUse);
+            const actual = typeof decoder.getLastLetterTimings === 'function' ? decoder.getLastLetterTimings() : [];
+            setLastTimings({ ideal, actual });
+        }
+
+        const gs = guidedStateRef.current;
+
+        if (gs.mode === 'open') {
+            // Freestyle: just append
+            setInput(prev => prev + letter);
+        } else {
+            // Guided mode
+            if (gs.complete || gs.retrying || !gs.groups.length) return;
+            if (!letter || !letter.trim()) return; // Ignore spaces from word timer
+
+            // Start the timer on the very first keypress
+            if (!guidedStartTimeRef.current) {
+                guidedStartTimeRef.current = Date.now();
+                startRunningTimer();
+            }
+
+            const currentGroup = gs.groups[gs.groupIndex];
+            if (!currentGroup) return;
+
+            const expectedChar = currentGroup[gs.charIndex];
+            const isCorrect = letter.toUpperCase() === expectedChar.toUpperCase();
+
+            const newResults = [...gs.results, isCorrect];
+            setGuidedResults(newResults);
+
+            const nextCharIdx = gs.charIndex + 1;
+
+            if (nextCharIdx >= currentGroup.length) {
+                // End of group
+                const anyFailed = newResults.some(r => !r);
+                if (anyFailed) {
+                    // Show "try again" message, then reset after a delay
+                    setGuidedRetrying(true);
+                    setTimeout(() => {
+                        setGuidedCharIndex(0);
+                        setGuidedResults([]);
+                        setGuidedRetrying(false);
+                    }, 1500);
+                } else {
+                    // Advance to next group
+                    const nextGroup = gs.groupIndex + 1;
+                    if (nextGroup >= gs.groups.length) {
+                        const elapsed = guidedStartTimeRef.current ? Date.now() - guidedStartTimeRef.current : 0;
+                        setGuidedElapsedMs(elapsed);
+                        setGuidedRunningTime(elapsed);
+                        stopRunningTimer();
+                        setGuidedComplete(true);
+                    } else {
+                        setGuidedGroupIndex(nextGroup);
+                        setGuidedCharIndex(0);
+                        setGuidedResults([]);
+                    }
+                }
+            } else {
+                setGuidedCharIndex(nextCharIdx);
+            }
+        }
+    }, []);
+
     // Initialize keyer tools on first render
     useEffect(() => {
         const sounder = new Sounder();
         sounderRef.current = sounder;
 
         const decoder = new Decoder((letter) => {
-            setInput(prev => prev + letter);
-            updateStats(decoder);
-
-            if (letter && letter.trim()) {
-                const wpmToUse = settingsRef.current.wpm;
-                const ideal = getIdealTiming(letter, wpmToUse);
-                const actual = typeof decoder.getLastLetterTimings === 'function' ? decoder.getLastLetterTimings() : [];
-                setLastTimings({ ideal, actual });
-            }
+            handleDecodedLetter(letter, decoder);
         });
         decoderRef.current = decoder;
 
@@ -140,9 +358,9 @@ export default function CwPractice() {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
             if (sounderRef.current) sounderRef.current.off();
-            clearInterval(keyer.oscillatorTimer); // Cleanup setInterval memory leak from the class
+            clearInterval(keyer.oscillatorTimer);
         };
-    }, []);
+    }, [handleDecodedLetter]);
 
     // Sync settings changes into the tools dynamically
     useEffect(() => {
@@ -157,6 +375,31 @@ export default function CwPractice() {
 
         updateStats(decoderRef.current);
     }, [settings]);
+
+    // When practice mode changes, set up the guided text
+    useEffect(() => {
+        guidedStartTimeRef.current = null;
+        setGuidedElapsedMs(0);
+        setGuidedRunningTime(0);
+        stopRunningTimer();
+        if (practiceMode === 'open') {
+            setGuidedGroups([]);
+            setGuidedGroupIndex(0);
+            setGuidedCharIndex(0);
+            setGuidedResults([]);
+            setGuidedComplete(false);
+        } else if (practiceTexts[practiceMode]) {
+            const groups = practiceTexts[practiceMode].text.trim().split(/\s+/);
+            setGuidedGroups(groups);
+            setGuidedGroupIndex(0);
+            setGuidedCharIndex(0);
+            setGuidedResults([]);
+            setGuidedComplete(false);
+        }
+        // Clear freestyle input when switching
+        setInput('');
+        setLastTimings({ actual: [], ideal: [] });
+    }, [practiceMode]);
 
     const updateStats = (decoder) => {
         if (!decoder) return;
@@ -173,7 +416,7 @@ export default function CwPractice() {
         });
 
         // WPM update
-        if (settings.mode === 1) { // Straight key mode is adaptive
+        if (settings.mode === 1) {
             const cwpm = decoder.calculateWpm();
             setCalculatedWpm(cwpm ? cwpm.toFixed(1) : '--');
         } else {
@@ -188,35 +431,74 @@ export default function CwPractice() {
         if (decoderRef.current && decoderRef.current.clearStats) {
             decoderRef.current.clearStats();
         }
+        // Reset guided state for current mode
+        if (practiceMode !== 'open') {
+            setGuidedCharIndex(0);
+            setGuidedResults([]);
+            setGuidedComplete(false);
+            setGuidedGroupIndex(0);
+            guidedStartTimeRef.current = null;
+            setGuidedElapsedMs(0);
+            setGuidedRunningTime(0);
+            stopRunningTimer();
+        }
     };
+
+    // Build practice mode dropdown options
+    const modeOptions = [
+        html`<option key="open" value="open">Open (Freestyle)</option>`
+    ];
+    for (const [key, val] of Object.entries(practiceTexts)) {
+        modeOptions.push(html`<option key=${key} value=${key}>${val.label}</option>`);
+    }
 
     return html`
         <div className="tool-card cw-practice">
             <div className="tool-header">
                 <h3>CW Practice</h3>
-                <p className="tool-subtitle">Freestyle practice mode to key characters with live adaptive stats.</p>
+                <p className="tool-subtitle">${practiceMode === 'open' ? 'Freestyle practice mode to key characters with live adaptive stats.' : 'Key the highlighted character. Green = correct, red = miss. Repeat failed groups.'}</p>
             </div>
 
             <div className="control-group">
                 <label className="control-label">
-                    Practice Mode:
+                    Practice Sets:
                     <select 
                         value=${practiceMode} 
                         onChange=${e => setPracticeMode(e.target.value)}
                         className="mode-select"
                         style=${{ padding: '0.5rem', marginTop: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)' }}
                     >
-                        <option value="open">Open (Freestyle)</option>
+                        ${modeOptions}
                     </select>
                 </label>
             </div>
 
-            <div className="output-area" style=${{ fontSize: '2rem', minHeight: '150px', letterSpacing: '2px', wordBreak: 'break-all', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', fontFamily: 'var(--font-mono)' }}>
-                ${input || html`<span style=${{ color: 'var(--text-secondary)' }}>Start keying...</span>`}
-            </div>
+            ${practiceMode === 'open' ? html`
+                <div className="output-area" style=${{ fontSize: '2rem', minHeight: '150px', letterSpacing: '2px', wordBreak: 'break-all', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', fontFamily: 'var(--font-mono)' }}>
+                    ${input || html`<span style=${{ color: 'var(--text-secondary)' }}>Start keying...</span>`}
+                </div>
+            ` : html`
+                <div className="output-area" style=${{ minHeight: '150px', padding: '1rem', position: 'relative' }}>
+                    ${guidedStartTimeRef.current && html`
+                        <div style=${{ position: 'absolute', top: '0.5rem', right: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                            ${formatElapsed(guidedComplete ? guidedElapsedMs : guidedRunningTime)}
+                        </div>
+                    `}
+                    <${GuidedDisplay}
+                        groups=${guidedGroups}
+                        groupIndex=${guidedGroupIndex}
+                        charIndex=${guidedCharIndex}
+                        results=${guidedResults}
+                        retrying=${guidedRetrying}
+                        elapsedMs=${guidedElapsedMs}
+                        drillLabel=${practiceTexts[practiceMode] ? practiceTexts[practiceMode].label : practiceMode}
+                        complete=${guidedComplete}
+                    />
+                </div>
+            `}
 
             <div style=${{ marginTop: '1rem', display: 'flex', gap: '1rem', justifyContent: 'space-between' }}>
-                <button className="primary-btn" style=${{ padding: '0.5rem 1rem', width: 'auto' }} onClick=${handleClear}>Clear</button>
+                <button className="primary-btn" style=${{ padding: '0.5rem 1rem', width: 'auto' }} onClick=${handleClear}>${practiceMode === 'open' ? 'Clear' : 'Restart'}</button>
             </div>
 
             <div className="timing-collapsible" style=${{ marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
