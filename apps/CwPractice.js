@@ -56,6 +56,26 @@ const practiceTexts = {
     bensbest: {
         label: "Ben's Best",
         text: 'BENS BEST BENT WIRE'
+    },
+    cwa_warmup: {
+        label: 'CWA - Warm Up',
+        text: 'EEEEE TTTTT IIIII MMMMM SSSSS OOOOO HHHHH 00000 55555 '
+            + 'AAAAA NNNNN UUUUU DDDDD VVVVV BBBBB 44444 66666 '
+            + 'ABCDEF GHIJK LMNOP QRSTU VWXYZ 12345 67890 '
+            + 'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK 70364 51289'
+    },
+    cwa_exercise: {
+        label: 'CWA - Exercise',
+        text: 'AAAAA BBBBB CCCCC DDDDD EEEEE FFFFF GGGGG HHHHH IIIII JJJJJ '
+            + 'KKKKK LLLLL MMMMM NNNNN OOOOO PPPPP QQQQQ RRRRR '
+            + 'SSSSS TTTTT UUUUU VVVVV WWWWW XXXXX YYYYY ZZZZZ '
+            + '11111 22222 33333 44444 55555 66666 77777 88888 99999 00000'
+    },
+    cwa_drill: {
+        label: 'CWA - Drill',
+        text: 'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK 70364 51289 '
+            + 'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK 70364 51289 '
+            + 'BENS BEST BENT WIRE/5 BENS BEST BENT WIRE/5 BENS BEST BENT WIRE/5'
     }
 };
 
