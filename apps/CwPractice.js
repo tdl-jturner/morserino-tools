@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import htm from 'htm';
 import { useSettings } from './Settings.js';
-import { Decoder } from '../lib/cranklin-morse-tools/decoder.js';
-import { Keyer } from '../lib/cranklin-morse-tools/keyer.js';
+import { Decoder, morseToAlphabet } from '../lib/decoder.js?v=9';
+import { Keyer } from '../lib/keyer.js';
+import { Sounder } from '../lib/sounder.js';
+
+window.restartAudioNeeded = () => false;
+window.restartAudio = () => { };
 
 const html = htm.bind(React.createElement);
 
-const ditdahMap = {
-    'A': '12', 'B': '2111', 'C': '2121', 'D': '211', 'E': '1', 'F': '1121', 'G': '221', 'H': '1111', 'I': '11', 'J': '1222', 'K': '212', 'L': '1211', 'M': '22', 'N': '21', 'O': '222', 'P': '1221', 'Q': '2212', 'R': '121', 'S': '111', 'T': '2', 'U': '112', 'V': '1112', 'W': '122', 'X': '2112', 'Y': '2122', 'Z': '2211',
-    '1': '12222', '2': '11222', '3': '11122', '4': '11112', '5': '11111', '6': '21111', '7': '22111', '8': '22211', '9': '22221', '0': '22222',
-    '/': '21121', '?': '112211', '.': '121212', ',': '221122', '=': '21112'
-};
+const ditdahMap = {};
+for (const [morse, letter] of morseToAlphabet.entries()) {
+    ditdahMap[letter] = morse;
+}
 
 function getIdealTiming(letter, wpm) {
     const upperLetter = letter ? letter.toUpperCase() : '';
@@ -84,6 +87,7 @@ export default function CwPractice() {
     // Refs to hold mutable tool instances
     const decoderRef = useRef(null);
     const keyerRef = useRef(null);
+    const sounderRef = useRef(null);
     const settingsRef = useRef(settings);
 
     // Always keep settingsRef current so event listeners have access to latest state
@@ -93,6 +97,9 @@ export default function CwPractice() {
 
     // Initialize keyer tools on first render
     useEffect(() => {
+        const sounder = new Sounder();
+        sounderRef.current = sounder;
+
         const decoder = new Decoder((letter) => {
             setInput(prev => prev + letter);
             updateStats(decoder);
@@ -100,17 +107,19 @@ export default function CwPractice() {
             if (letter && letter.trim()) {
                 const wpmToUse = settingsRef.current.wpm;
                 const ideal = getIdealTiming(letter, wpmToUse);
-                const actual = decoder.getLastLetterTimings();
+                const actual = typeof decoder.getLastLetterTimings === 'function' ? decoder.getLastLetterTimings() : [];
                 setLastTimings({ ideal, actual });
             }
         });
         decoderRef.current = decoder;
 
-        const keyer = new Keyer(decoder);
+        const keyer = new Keyer(sounder, decoder);
         keyerRef.current = keyer;
 
         // Start listening to key events manually at document level to ensure focus isn't an issue
         const handleKeyDown = (e) => {
+            if (sounder && typeof sounder.initialize === 'function') sounder.initialize();
+
             if (['ControlLeft', 'ControlRight', 'BracketLeft', 'BracketRight'].includes(e.code)) {
                 e.preventDefault();
                 keyer.press(e, true);
@@ -130,17 +139,20 @@ export default function CwPractice() {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
+            if (sounderRef.current) sounderRef.current.off();
             clearInterval(keyer.oscillatorTimer); // Cleanup setInterval memory leak from the class
         };
     }, []);
 
     // Sync settings changes into the tools dynamically
     useEffect(() => {
-        if (!keyerRef.current || !decoderRef.current) return;
+        if (!keyerRef.current || !decoderRef.current || !sounderRef.current) return;
 
-        const { wpm, mode, farnsworth } = settings;
+        const { wpm, mode, farnsworth, tone = 550 } = settings;
         keyerRef.current.setWpm(wpm);
         keyerRef.current.setMode(mode);
+        if (typeof keyerRef.current.setTone === 'function') keyerRef.current.setTone(tone);
+        if (typeof sounderRef.current.setTone === 'function') sounderRef.current.setTone(tone);
         decoderRef.current.setFarnsworth(farnsworth);
 
         updateStats(decoderRef.current);

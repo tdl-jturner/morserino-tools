@@ -7,7 +7,8 @@ export function useSettings() {
     const defaultSettings = {
         mode: 2, // 1: straight key, 2: Iambic A, 3: Iambic B, 4: Ultimatic
         wpm: 20,
-        farnsworth: 2
+        farnsworth: 2,
+        tone: 550
     };
     const [settings, setSettings] = useState(() => {
         const saved = localStorage.getItem('morse-settings');
@@ -71,6 +72,18 @@ export default function Settings() {
                         type="range" min="1" max="10" 
                         value=${settings.farnsworth} 
                         onChange=${e => updateSetting('farnsworth', parseInt(e.target.value))}
+                        className="slider"
+                    />
+                </label>
+            </div>
+
+            <div className="control-group">
+                <label className="control-label">
+                    Tone (Hz): <span className="value-display">${settings.tone}</span>
+                    <input 
+                        type="range" min="300" max="1000" step="10"
+                        value=${settings.tone} 
+                        onChange=${e => updateSetting('tone', parseInt(e.target.value))}
                         className="slider"
                     />
                 </label>
