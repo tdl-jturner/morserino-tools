@@ -1,0 +1,267 @@
+import React, { useState, useEffect, useRef } from 'react';
+import htm from 'htm';
+import { useSettings } from './Settings.js';
+import { Decoder } from '../lib/cranklin-morse-tools/decoder.js';
+import { Keyer } from '../lib/cranklin-morse-tools/keyer.js';
+
+const html = htm.bind(React.createElement);
+
+const ditdahMap = {
+    'A': '12', 'B': '2111', 'C': '2121', 'D': '211', 'E': '1', 'F': '1121', 'G': '221', 'H': '1111', 'I': '11', 'J': '1222', 'K': '212', 'L': '1211', 'M': '22', 'N': '21', 'O': '222', 'P': '1221', 'Q': '2212', 'R': '121', 'S': '111', 'T': '2', 'U': '112', 'V': '1112', 'W': '122', 'X': '2112', 'Y': '2122', 'Z': '2211',
+    '1': '12222', '2': '11222', '3': '11122', '4': '11112', '5': '11111', '6': '21111', '7': '22111', '8': '22211', '9': '22221', '0': '22222',
+    '/': '21121', '?': '112211', '.': '121212', ',': '221122', '=': '21112'
+};
+
+function getIdealTiming(letter, wpm) {
+    const upperLetter = letter ? letter.toUpperCase() : '';
+    const patternString = upperLetter ? ditdahMap[upperLetter] : '';
+    if (!patternString) return [];
+
+    const ditDuration = 1200 / wpm;
+    const dahDuration = ditDuration * 3;
+    const intraCharSpace = ditDuration;
+
+    let timings = [];
+    let isFirstElement = true;
+    for (const element of patternString) {
+        if (!isFirstElement) {
+            timings.push({ type: 'space', duration: intraCharSpace });
+        }
+        if (element === '1') {
+            timings.push({ type: 'mark', duration: ditDuration });
+        } else if (element === '2') {
+            timings.push({ type: 'mark', duration: dahDuration });
+        }
+        isFirstElement = false;
+    }
+    return timings;
+}
+
+const TimingBar = ({ timings }) => {
+    if (!timings || timings.length === 0) return null;
+    const ownTotalDuration = timings.reduce((sum, t) => sum + Math.max(t.duration, 0), 0);
+    if (ownTotalDuration <= 0) return null;
+
+    const minElementDuration = 1;
+    const effectiveTotalDuration = Math.max(ownTotalDuration, minElementDuration * timings.length);
+
+    return html`
+        <div style=${{ display: 'flex', height: '24px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', overflow: 'hidden', width: '100%', borderRadius: '4px' }}>
+            ${timings.map((t, idx) => {
+        const duration = Math.max(t.duration, 0);
+        const percentage = (duration / effectiveTotalDuration) * 100;
+        const isMark = t.type === 'mark';
+        return html`
+                    <div key=${idx} style=${{
+                width: percentage + '%',
+                minWidth: percentage > 0 && percentage < 0.5 ? '1px' : 'auto',
+                height: '100%',
+                backgroundColor: isMark ? 'var(--blue)' : 'var(--bg-color)',
+                opacity: isMark ? 0.9 : 1
+            }}></div>
+                `;
+    })}
+        </div>
+    `;
+};
+
+export default function CwPractice() {
+    const [settings] = useSettings();
+    const [practiceMode, setPracticeMode] = useState('open'); // Dropdown for "mode" -> Open
+    const [input, setInput] = useState('');
+    const [calculatedWpm, setCalculatedWpm] = useState('--');
+    const [showTiming, setShowTiming] = useState(false);
+
+    // Stats for timing table
+    const [stats, setStats] = useState({
+        dit: { avg: NaN, min: NaN, max: NaN, ideal: NaN },
+        dah: { avg: NaN, min: NaN, max: NaN, ideal: NaN }
+    });
+
+    // Graphical timings for the last letter
+    const [lastTimings, setLastTimings] = useState({ actual: [], ideal: [] });
+
+    // Refs to hold mutable tool instances
+    const decoderRef = useRef(null);
+    const keyerRef = useRef(null);
+    const settingsRef = useRef(settings);
+
+    // Always keep settingsRef current so event listeners have access to latest state
+    useEffect(() => {
+        settingsRef.current = settings;
+    }, [settings]);
+
+    // Initialize keyer tools on first render
+    useEffect(() => {
+        const decoder = new Decoder((letter) => {
+            setInput(prev => prev + letter);
+            updateStats(decoder);
+
+            if (letter && letter.trim()) {
+                const wpmToUse = settingsRef.current.wpm;
+                const ideal = getIdealTiming(letter, wpmToUse);
+                const actual = decoder.getLastLetterTimings();
+                setLastTimings({ ideal, actual });
+            }
+        });
+        decoderRef.current = decoder;
+
+        const keyer = new Keyer(decoder);
+        keyerRef.current = keyer;
+
+        // Start listening to key events manually at document level to ensure focus isn't an issue
+        const handleKeyDown = (e) => {
+            if (['ControlLeft', 'ControlRight', 'BracketLeft', 'BracketRight'].includes(e.code)) {
+                e.preventDefault();
+                keyer.press(e, true);
+            }
+        };
+
+        const handleKeyUp = (e) => {
+            if (['ControlLeft', 'ControlRight', 'BracketLeft', 'BracketRight'].includes(e.code)) {
+                e.preventDefault();
+                keyer.press(e, false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            clearInterval(keyer.oscillatorTimer); // Cleanup setInterval memory leak from the class
+        };
+    }, []);
+
+    // Sync settings changes into the tools dynamically
+    useEffect(() => {
+        if (!keyerRef.current || !decoderRef.current) return;
+
+        const { wpm, mode, farnsworth } = settings;
+        keyerRef.current.setWpm(wpm);
+        keyerRef.current.setMode(mode);
+        decoderRef.current.setFarnsworth(farnsworth);
+
+        updateStats(decoderRef.current);
+    }, [settings]);
+
+    const updateStats = (decoder) => {
+        if (!decoder) return;
+
+        const idealDit = decoder.unit;
+        const idealDah = decoder.unit * 3;
+
+        const ditData = decoder.getStats ? decoder.getStats('dit') : { avg: NaN, min: NaN, max: NaN };
+        const dahData = decoder.getStats ? decoder.getStats('dah') : { avg: NaN, min: NaN, max: NaN };
+
+        setStats({
+            dit: { ideal: idealDit, ...ditData },
+            dah: { ideal: idealDah, ...dahData }
+        });
+
+        // WPM update
+        if (settings.mode === 1) { // Straight key mode is adaptive
+            const cwpm = decoder.calculateWpm();
+            setCalculatedWpm(cwpm ? cwpm.toFixed(1) : '--');
+        } else {
+            setCalculatedWpm(settings.wpm);
+        }
+    };
+
+    const handleClear = () => {
+        setInput('');
+        setCalculatedWpm('--');
+        setLastTimings({ actual: [], ideal: [] });
+        if (decoderRef.current && decoderRef.current.clearStats) {
+            decoderRef.current.clearStats();
+        }
+    };
+
+    return html`
+        <div className="tool-card cw-practice">
+            <div className="tool-header">
+                <h3>CW Practice</h3>
+                <p className="tool-subtitle">Freestyle practice mode to key characters with live adaptive stats.</p>
+            </div>
+
+            <div className="control-group">
+                <label className="control-label">
+                    Practice Mode:
+                    <select 
+                        value=${practiceMode} 
+                        onChange=${e => setPracticeMode(e.target.value)}
+                        className="mode-select"
+                        style=${{ padding: '0.5rem', marginTop: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)' }}
+                    >
+                        <option value="open">Open (Freestyle)</option>
+                    </select>
+                </label>
+            </div>
+
+            <div className="output-area" style=${{ fontSize: '2rem', minHeight: '150px', letterSpacing: '2px', wordBreak: 'break-all', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', fontFamily: 'var(--font-mono)' }}>
+                ${input || html`<span style=${{ color: 'var(--text-secondary)' }}>Start keying...</span>`}
+            </div>
+
+            <div style=${{ marginTop: '1rem', display: 'flex', gap: '1rem', justifyContent: 'space-between' }}>
+                <button className="primary-btn" style=${{ padding: '0.5rem 1rem', width: 'auto' }} onClick=${handleClear}>Clear</button>
+            </div>
+
+            <div className="timing-collapsible" style=${{ marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                <button 
+                    onClick=${() => setShowTiming(!showTiming)} 
+                    style=${{ background: 'none', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', fontWeight: 'bold' }}
+                >
+                    <span style=${{ width: '20px', display: 'inline-block' }}>${showTiming ? '▼' : '▶'}</span>
+                    Show Timing Stats
+                </button>
+
+                ${showTiming && html`
+                    <div className="stats-panel" style=${{ marginTop: '1rem', backgroundColor: 'var(--bg-color-alt)', padding: '1rem', borderRadius: '8px' }}>
+                        <div style=${{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                            <div>
+                                <strong style=${{ color: 'var(--base1)' }}>Set WPM:</strong> <span style=${{ color: 'var(--accent-color)' }}>${settings.wpm}</span>
+                            </div>
+                            <div>
+                                <strong style=${{ color: 'var(--base1)' }}>Calculated WPM:</strong> <span style=${{ color: 'var(--accent-color)' }}>${calculatedWpm}</span>
+                            </div>
+                        </div>
+
+                        <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="stat-card" style=${{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px' }}>
+                                <h4 style=${{ margin: '0 0 0.5rem 0', color: 'var(--base2)' }}>Dit (ms)</h4>
+                                <div>Ideal: <span style=${{ color: 'var(--accent-color)' }}>${stats.dit.ideal ? stats.dit.ideal.toFixed(0) : '--'}</span></div>
+                                <div style=${{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                    Avg/Min/Max: ${!isNaN(stats.dit.avg) ? stats.dit.avg + ' / ' + stats.dit.min + ' / ' + stats.dit.max : '-- / -- / --'}
+                                </div>
+                            </div>
+
+                            <div className="stat-card" style=${{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px' }}>
+                                <h4 style=${{ margin: '0 0 0.5rem 0', color: 'var(--base2)' }}>Dah (ms)</h4>
+                                <div>Ideal: <span style=${{ color: 'var(--accent-color)' }}>${stats.dah.ideal ? stats.dah.ideal.toFixed(0) : '--'}</span></div>
+                                <div style=${{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                    Avg/Min/Max: ${!isNaN(stats.dah.avg) ? stats.dah.avg + ' / ' + stats.dah.min + ' / ' + stats.dah.max : '-- / -- / --'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${(lastTimings.ideal.length > 0 || lastTimings.actual.length > 0) && html`
+                            <div className="timing-comparison" style=${{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                                <h4 style=${{ margin: '0 0 1rem 0', color: 'var(--base2)' }}>Last Character Timing</h4>
+                                
+                                <div style=${{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem', gap: '1rem' }}>
+                                    <span style=${{ width: '50px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Ideal:</span>
+                                    <div style=${{ flex: 1 }}><${TimingBar} timings=${lastTimings.ideal} /></div>
+                                </div>
+                                <div style=${{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <span style=${{ width: '50px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Actual:</span>
+                                    <div style=${{ flex: 1 }}><${TimingBar} timings=${lastTimings.actual} /></div>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `}
+            </div>
+        </div>
+    `;
+}
