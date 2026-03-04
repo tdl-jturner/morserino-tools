@@ -4,6 +4,7 @@ import Settings from './apps/Settings.js';
 import CwPractice from './apps/CwPractice.js';
 import EchoTrainer from './apps/EchoTrainer.js';
 import About from './apps/About.js';
+import { initializeAudio } from './lib/sounder.js';
 
 const html = htm.bind(React.createElement);
 
@@ -38,6 +39,11 @@ const apps = {
 
 export default function App() {
   const [currentAppId, setCurrentAppId] = useState(null);
+
+  const startApp = (id) => {
+    initializeAudio();
+    setCurrentAppId(id);
+  };
 
   if (currentAppId && apps[currentAppId]) {
     const ActiveApp = apps[currentAppId].component;
