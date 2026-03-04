@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import htm from 'htm';
 import Settings from './apps/Settings.js';
 import CwPractice from './apps/CwPractice.js';
+import EchoTrainer from './apps/EchoTrainer.js';
 
 const html = htm.bind(React.createElement);
 
@@ -16,9 +17,15 @@ const apps = {
   },
   cwPractice: {
     name: 'CW Practice',
-    description: 'Practice sending Morse code freestyle using your keyboard.',
+    description: 'Practice sending Morse code with live adaptive stats.',
     component: CwPractice,
     icon: '📝'
+  },
+  echoTrainer: {
+    name: 'Echo Trainer',
+    description: 'Listen to Morse code and echo it back to practice receiving.',
+    component: EchoTrainer,
+    icon: '🔊'
   }
 };
 
