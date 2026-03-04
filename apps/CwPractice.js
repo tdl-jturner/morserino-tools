@@ -12,6 +12,31 @@ const html = htm.bind(React.createElement);
 
 // Practice text definitions for guided CW Practice modes.
 const practiceTexts = {
+    arrl_sections: {
+        label: "ARRL Sections",
+        groups: [
+            'AB', 'AK', 'AL', 'AR', 'AZ',
+            'BC',
+            'CO', 'CT',
+            'DE',
+            'EB', 'EMA', 'ENY', 'EPA', 'EWA',
+            'GA', 'GH',
+            'IA', 'ID', 'IL', 'IN',
+            'KS', 'KY',
+            'LA', 'LAX',
+            'MB', 'MDC', 'ME', 'MI', 'MN', 'MO', 'MS', 'MT',
+            'NB', 'NC', 'ND', 'NE', 'NFL', 'NH', 'NL', 'NLI', 'NM', 'NNJ', 'NNY', 'NS', 'NTX', 'NV',
+            'OH', 'OK', 'ONE', 'ONN', 'ONS', 'OR', 'ORG',
+            'PAC', 'PE', 'PR',
+            'QC',
+            'RI',
+            'SB', 'SC', 'SCV', 'SD', 'SDG', 'SF', 'SFL', 'SJV', 'SK', 'SNJ', 'STX', 'SV',
+            'TER', 'TN',
+            'UT',
+            'VA', 'VI', 'VT',
+            'WCF', 'WI', 'WMA', 'WNY', 'WPA', 'WTX', 'WV', 'WWA', 'WY'
+        ]
+    },
     aazz: {
         label: 'AAZZ - Letter Pairs',
         groups: [
@@ -71,6 +96,27 @@ const practiceTexts = {
             'THE', 'QUICK', 'BROWN', 'FOX', 'JUMPED', 'OVER', 'THE', 'LAZY', 'DOGS', 'BACK', '70364', '51289',
             'THE', 'QUICK', 'BROWN', 'FOX', 'JUMPED', 'OVER', 'THE', 'LAZY', 'DOGS', 'BACK', '70364', '51289',
             'BENS', 'BEST', 'BENT', 'WIRE/5', 'BENS', 'BEST', 'BENT', 'WIRE/5', 'BENS', 'BEST', 'BENT', 'WIRE/5'
+        ]
+    },
+    potasota: {
+        label: 'Potasota',
+        groups: [
+            'CQ', 'POTA', 'SOTA', 'DE',
+            'BK', 'RR', 'TU', 'TNX', 'GL', 'FB', 'QSO',
+            'GA', 'GM', 'GE',
+            '53N', '55N', '5NN',
+            '73', '72'
+        ]
+    },
+    states: {
+        label: 'States',
+        groups: [
+            "AL", "AK", "AZ", "AR", "AS", "CA", "CO", "CT", "DE", "DC",
+            "FL", "GA", "GU", "HI", "ID", "IL", "IN", "IA", "KS", "KY",
+            "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE",
+            "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "MP", "OH", "OK",
+            "OR", "PA", "PR", "RI", "SC", "SD", "TN", "TX", "TT", "UT",
+            "VT", "VA", "VI", "WA", "WV", "WI", "WY"
         ]
     }
 };
