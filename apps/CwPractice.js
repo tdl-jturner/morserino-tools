@@ -14,68 +14,64 @@ const html = htm.bind(React.createElement);
 const practiceTexts = {
     aazz: {
         label: 'AAZZ - Letter Pairs',
-        text: 'AAABAC ADAEAF AGAHAI AJAKAL '
-            + 'AMANAO APAQAR ASATAU AVAWAX AYAZ '
-            + 'BBBCBD BEBFBG BHBIBJ BKBLBM '
-            + 'BNBOBP BQBRBS BTBUBV BWBXBY BZ '
-            + 'CCCDCE CFCGCH CICJCK CLCMCN '
-            + 'COCPCQ CRCSCT CUCVCW CXCYCZ '
-            + 'DDDEDF DGDHDI DJDKDL DMDNDO '
-            + 'DPDQDR DSDTDU DVDWDX DYDZ '
-            + 'EEEFEG EHEIEJ EKELEM ENEOEP '
-            + 'EQERES ETEUEV EWEXEY EZ '
-            + 'FFFGFH FIFJFK FLFMFN FOFPFQ '
-            + 'FRFSFT FUFVFW FXFYFZ '
-            + 'GGGHGI GJGKGL GMGNGO GPGQGR '
-            + 'GSGTGU GVGWGX GYGZ '
-            + 'HHHIHJ HKHLHM HNHOHP HQHRHS '
-            + 'HTHUHV HWHXHY HZ '
-            + 'IIIJIK ILIMIN IOIPIQ IRISIT '
-            + 'IUIVIW IXIYIZ '
-            + 'JJJKJL JMJNJO JPJQJR JSJTJU '
-            + 'JVJWJX JYJZ '
-            + 'KKKLKM KNKOKP KQKRKS KTKUKV '
-            + 'KWKXKY KZ '
-            + 'LLLMLN LOLPLQ LRLSLT LULVLW '
-            + 'LXLYLZ '
-            + 'MMMNMO MPMQMR MSMTMU MVMWMX MYMZ '
-            + 'NNNONP NQNRNS NTNUNV NWNXNY NZ '
-            + 'OOOPOQ OROSOT OUOVOW OXOYOZ '
-            + 'PPPQPR PSPTPU PVPWPX PYPZ '
-            + 'QQQRQS QTQUQV QWQXQY QZ '
-            + 'RRRSRT RURVRW RXRYRZ '
-            + 'SSSTSU SVSWSX SYSZ '
-            + 'TTTUTV TWTXTY TZ '
-            + 'UUUVUW UXUYUZ '
-            + 'VVVWVX VYVZ '
-            + 'WWWXWY WZ '
-            + 'XXXYXZ '
-            + 'YYYZ '
-            + 'ZZ'
+        groups: [
+            'AAABAC', 'ADAEAF', 'AGAHAI', 'AJAKAL', 'AMANAO', 'APAQAR', 'ASATAU', 'AVAWAX', 'AYAZ',
+            'BBBCBD', 'BEBFBG', 'BHBIBJ', 'BKBLBM', 'BNBOBP', 'BQBRBS', 'BTBUBV', 'BWBXBY', 'BZ',
+            'CCCDCE', 'CFCGCH', 'CICJCK', 'CLCMCN', 'COCPCQ', 'CRCSCT', 'CUCVCW', 'CXCYVZ',
+            'DDDEDF', 'DGDHDI', 'DJDKDL', 'DMDNDO', 'DPDQDR', 'DSDTDU', 'DVDWDX', 'DYDZ',
+            'EEEFEG', 'EHEIEJ', 'EKELEM', 'ENEOEP', 'EQERES', 'ETEUEV', 'EWEXEY', 'EZ',
+            'FFFGFH', 'FIFJFK', 'FLFMFN', 'FOFPFQ', 'FRFSFT', 'FUFVFW', 'FXFYFZ',
+            'GGGHGI', 'GJGKGL', 'GMGNGO', 'GPGQGR', 'GSGTGU', 'GVGWGX', 'GYGZ',
+            'HHHIHJ', 'HKHLHM', 'HNHOHP', 'HQHRHS', 'HTHUHV', 'HWHXHY', 'HZ',
+            'IIIJIK', 'ILIMIN', 'IOIPIQ', 'IRISIT', 'IUIVIW', 'IXIYIZ',
+            'JJJKJL', 'JMJNJO', 'JPJQJR', 'JSJTJU', 'JVJWJX', 'JYJZ',
+            'KKKLKM', 'KNKOKP', 'KQKRKS', 'KTKUKV', 'KWKXKY', 'KZ',
+            'LLLMLN', 'LOLPLQ', 'LRLSLT', 'LULVLW', 'LXLYLZ',
+            'MMMNMO', 'MPMQMR', 'MSMTMU', 'MVMWMX', 'MYMZ',
+            'NNNONP', 'NQNRNS', 'NTNUNV', 'NWNXNY', 'NZ',
+            'OOOPOQ', 'OROSOT', 'OUOVOW', 'OXOYOZ',
+            'PPPQPR', 'PSPTPU', 'PVPWPX', 'PYPZ',
+            'QQQRQS', 'QTQUQV', 'QWQXQY', 'QZ',
+            'RRRRRT', 'RURVRW', 'RXRYRZ',
+            'SSSTSU', 'SVSWSX', 'SYSZ',
+            'TTTUTV', 'TWTVTY', 'TZ',
+            'UUUVUW', 'UXUYUZ',
+            'VVVWVX', 'VYVZ',
+            'WWWXWY', 'WZ',
+            'XXXYXZ',
+            'YYYZ',
+            'ZZ'
+        ]
     },
     bensbest: {
         label: "Ben's Best",
-        text: 'BENS BEST BENT WIRE'
+        groups: ['BENS BEST BENT WIRE']
     },
     cwa_warmup: {
         label: 'CWA - Warm Up',
-        text: 'EEEEE TTTTT IIIII MMMMM SSSSS OOOOO HHHHH 00000 55555 '
-            + 'AAAAA NNNNN UUUUU DDDDD VVVVV BBBBB 44444 66666 '
-            + 'ABCDEF GHIJK LMNOP QRSTU VWXYZ 12345 67890 '
-            + 'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK 70364 51289'
+        groups: [
+            'EEEEE', 'TTTTT', 'IIIII', 'MMMMM', 'SSSSS', 'OOOOO', 'HHHHH', '00000', '55555',
+            'AAAAA', 'NNNNN', 'UUUUU', 'DDDDD', 'VVVVV', 'BBBBB', '44444', '66666',
+            'ABCDEF', 'GHIJK', 'LMNOP', 'QRSTU', 'VWXYZ', '12345', '67890',
+            'THE', 'QUICK', 'BROWN', 'FOX', 'JUMPED', 'OVER', 'THE', 'LAZY', 'DOGS', 'BACK', '70364', '51289'
+        ]
     },
     cwa_exercise: {
         label: 'CWA - Exercise',
-        text: 'AAAAA BBBBB CCCCC DDDDD EEEEE FFFFF GGGGG HHHHH IIIII JJJJJ '
-            + 'KKKKK LLLLL MMMMM NNNNN OOOOO PPPPP QQQQQ RRRRR '
-            + 'SSSSS TTTTT UUUUU VVVVV WWWWW XXXXX YYYYY ZZZZZ '
-            + '11111 22222 33333 44444 55555 66666 77777 88888 99999 00000'
+        groups: [
+            'AAAAA', 'BBBBB', 'CCCCC', 'DDDDD', 'EEEEE', 'FFFFF', 'GGGGG', 'HHHHH', 'IIIII', 'JJJJJ',
+            'KKKKK', 'LLLLL', 'MMMMM', 'NNNNN', 'OOOOO', 'PPPPP', 'QQQQQ', 'RRRRR',
+            'SSSSS', 'TTTTT', 'UUUUU', 'VVVVV', 'WWWWW', 'XXXXX', 'YYYYY', 'ZZZZZ',
+            '11111', '22222', '33333', '44444', '55555', '66666', '77777', '88888', '99999', '00000'
+        ]
     },
     cwa_drill: {
         label: 'CWA - Drill',
-        text: 'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK 70364 51289 '
-            + 'THE QUICK BROWN FOX JUMPED OVER THE LAZY DOGS BACK 70364 51289 '
-            + 'BENS BEST BENT WIRE/5 BENS BEST BENT WIRE/5 BENS BEST BENT WIRE/5'
+        groups: [
+            'THE', 'QUICK', 'BROWN', 'FOX', 'JUMPED', 'OVER', 'THE', 'LAZY', 'DOGS', 'BACK', '70364', '51289',
+            'THE', 'QUICK', 'BROWN', 'FOX', 'JUMPED', 'OVER', 'THE', 'LAZY', 'DOGS', 'BACK', '70364', '51289',
+            'BENS', 'BEST', 'BENT', 'WIRE/5', 'BENS', 'BEST', 'BENT', 'WIRE/5', 'BENS', 'BEST', 'BENT', 'WIRE/5'
+        ]
     }
 };
 
@@ -411,8 +407,7 @@ export default function CwPractice() {
             setGuidedResults([]);
             setGuidedComplete(false);
         } else if (practiceTexts[practiceMode]) {
-            const groups = practiceTexts[practiceMode].text.trim().split(/\s+/);
-            setGuidedGroups(groups);
+            setGuidedGroups(practiceTexts[practiceMode].groups);
             setGuidedGroupIndex(0);
             setGuidedCharIndex(0);
             setGuidedResults([]);
