@@ -64,7 +64,7 @@ export default function App() {
       </header>
       <div className="menu-list">
         ${Object.entries(apps).map(([id, app]) => html`
-          <button key=${id} className="menu-item" onClick=${() => setCurrentAppId(id)}>
+          <button key=${id} className="menu-item" onClick=${() => startApp(id)}>
             <div className="menu-item-icon-large">${app.icon}</div>
             <div className="menu-item-info">
               <div className="menu-item-title">${app.name}</div>
