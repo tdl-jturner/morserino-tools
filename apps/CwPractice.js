@@ -240,6 +240,7 @@ export default function CwPractice() {
     const [settings] = useSettings();
     const [practiceMode, setPracticeMode] = useState('open');
     const [input, setInput] = useState('');
+    const [randomize, setRandomize] = useState(false);
     const [calculatedWpm, setCalculatedWpm] = useState('--');
     const [showTiming, setShowTiming] = useState(false);
 
@@ -453,7 +454,15 @@ export default function CwPractice() {
             setGuidedResults([]);
             setGuidedComplete(false);
         } else if (practiceTexts[practiceMode]) {
-            setGuidedGroups(practiceTexts[practiceMode].groups);
+            let groups = [...practiceTexts[practiceMode].groups];
+            if (randomize) {
+                // Fisher-Yates shuffle
+                for (let i = groups.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [groups[i], groups[j]] = [groups[j], groups[i]];
+                }
+            }
+            setGuidedGroups(groups);
             setGuidedGroupIndex(0);
             setGuidedCharIndex(0);
             setGuidedResults([]);
@@ -462,7 +471,7 @@ export default function CwPractice() {
         // Clear freestyle input when switching
         setInput('');
         setLastTimings({ actual: [], ideal: [] });
-    }, [practiceMode]);
+    }, [practiceMode, randomize]);
 
     const updateStats = (decoder) => {
         if (!decoder) return;
@@ -522,18 +531,34 @@ export default function CwPractice() {
                 <p className="tool-subtitle">${practiceMode === 'open' ? 'Freestyle practice mode to key characters with live adaptive stats.' : 'Key the highlighted character. Green = correct, red = miss. Repeat failed groups.'}</p>
             </div>
 
-            <div className="control-group">
-                <label className="control-label">
-                    Practice Sets:
-                    <select 
-                        value=${practiceMode} 
-                        onChange=${e => setPracticeMode(e.target.value)}
-                        className="mode-select"
-                        style=${{ padding: '0.5rem', marginTop: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)' }}
-                    >
-                        ${modeOptions}
-                    </select>
-                </label>
+            <div className="control-group" style=${{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style=${{ flex: 1, minWidth: '200px' }}>
+                    <label className="control-label">
+                        Practice Sets:
+                        <select 
+                            value=${practiceMode} 
+                            onChange=${e => setPracticeMode(e.target.value)}
+                            className="mode-select"
+                            style=${{ padding: '0.5rem', marginTop: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', width: '100%' }}
+                        >
+                            ${modeOptions}
+                        </select>
+                    </label>
+                </div>
+                
+                ${practiceMode !== 'open' && html`
+                    <div style=${{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style=${{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>Randomize</span>
+                        <label className="switch">
+                            <input 
+                                type="checkbox" 
+                                checked=${randomize} 
+                                onChange=${e => setRandomize(e.target.checked)}
+                            />
+                            <span className="slider-toggle"></span>
+                        </label>
+                    </div>
+                `}
             </div>
 
             ${practiceMode === 'open' ? html`
