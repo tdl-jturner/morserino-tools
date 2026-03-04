@@ -434,8 +434,8 @@ export default function CwPractice() {
                 <p className="tool-subtitle">${practiceMode === 'open' ? 'Freestyle practice mode to key characters with live adaptive stats.' : 'Key the highlighted character. Green = correct, red = miss. Repeat failed groups.'}</p>
             </div>
 
-            <div className="control-group" style=${{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <div style=${{ flex: 1, minWidth: '200px' }}>
+            <div className="control-group" style=${{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style=${{ minWidth: '100%' }}>
                     <label className="control-label">
                         Practice Sets:
                         <select 

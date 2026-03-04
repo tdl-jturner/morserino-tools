@@ -216,8 +216,8 @@ export default function EchoTrainer() {
                 <p className="tool-subtitle">Listen to the Morse, then echo it back with your key.</p>
             </div>
 
-            <div className="control-group" style=${{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <div style=${{ flex: 1, minWidth: '200px' }}>
+            <div className="control-group" style=${{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style=${{ minWidth: '100%' }}>
                     <label className="control-label">
                         Practice Set:
                         <select 
@@ -230,7 +230,7 @@ export default function EchoTrainer() {
                         </select>
                     </label>
                 </div>
-                <div style=${{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style=${{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <span style=${{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>Randomize</span>
                     <label className="switch">
                         <input type="checkbox" checked=${randomize} onChange=${e => setRandomize(e.target.checked)} />
@@ -240,11 +240,11 @@ export default function EchoTrainer() {
             </div>
 
             <div className="output-area" style=${{ minHeight: '120px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style=${{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                    <button className="primary-btn" style=${{ width: 'auto' }} onClick=${playCurrentGroup}>
+                <div style=${{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <button className="primary-btn" style=${{ width: '100%' }} onClick=${playCurrentGroup}>
                         🔊 Play
                     </button>
-                    <button className="primary-btn" style=${{ width: 'auto', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} onClick=${() => setRevealed(!revealed)}>
+                    <button className="primary-btn" style=${{ width: '100%', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} onClick=${() => setRevealed(!revealed)}>
                         ${revealed ? 'Hide' : 'Reveal'}
                     </button>
                 </div>

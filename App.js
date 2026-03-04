@@ -3,12 +3,19 @@ import htm from 'htm';
 import Settings from './apps/Settings.js';
 import CwPractice from './apps/CwPractice.js';
 import EchoTrainer from './apps/EchoTrainer.js';
+import About from './apps/About.js';
 
 const html = htm.bind(React.createElement);
 
 // Registry of all available tools
 // To add a new tool, import it above and add it to this object.
 const apps = {
+  about: {
+    name: 'About',
+    description: 'Learn about compatibility and how to use these tools.',
+    component: About,
+    icon: 'ℹ️'
+  },
   settings: {
     name: 'Settings',
     description: 'Configure WPM, mode, Farnsworth ratio, and tone globally.',
@@ -61,7 +68,6 @@ export default function App() {
             <div className="menu-item-icon-large">${app.icon}</div>
             <div className="menu-item-info">
               <div className="menu-item-title">${app.name}</div>
-              <div className="menu-item-desc">${app.description}</div>
             </div>
             <div className="menu-item-chevron">→</div>
           </button>
