@@ -335,7 +335,24 @@ export default function CwPractice() {
         } else {
             // Guided mode
             if (gs.complete || gs.retrying || !gs.groups.length) return;
-            if (!letter || !letter.trim()) return; // Ignore spaces from word timer
+
+            const currentGroup = gs.groups[gs.groupIndex];
+            if (!currentGroup) return;
+            const expectedChar = currentGroup[gs.charIndex];
+
+            // Ignore spaces/decoding pauses unless the current drill explicitly expects a space char
+            if ((letter === ' ' || !letter.trim()) && expectedChar !== ' ') return;
+
+            // Explicit error signal handling: restart the current group
+            if (letter === '<err>') {
+                setGuidedRetrying(true);
+                setTimeout(() => {
+                    setGuidedCharIndex(0);
+                    setGuidedResults([]);
+                    setGuidedRetrying(false);
+                }, 1000);
+                return;
+            }
 
             // Start the timer on the very first keypress
             if (!guidedStartTimeRef.current) {
@@ -343,10 +360,6 @@ export default function CwPractice() {
                 startRunningTimer();
             }
 
-            const currentGroup = gs.groups[gs.groupIndex];
-            if (!currentGroup) return;
-
-            const expectedChar = currentGroup[gs.charIndex];
             const isCorrect = letter.toUpperCase() === expectedChar.toUpperCase();
 
             const newResults = [...gs.results, isCorrect];
