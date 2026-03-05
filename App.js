@@ -3,6 +3,7 @@ import htm from 'htm';
 import Settings from './apps/Settings.js';
 import CwPractice from './apps/CwPractice.js';
 import EchoTrainer from './apps/EchoTrainer.js';
+import DitTrain from './apps/DitTrain.js';
 import About from './apps/About.js';
 import { initializeAudio } from './lib/sounder.js';
 
@@ -34,6 +35,12 @@ const apps = {
     description: 'Listen to Morse code and echo it back to practice receiving.',
     component: EchoTrainer,
     icon: '🔊'
+  },
+  ditTrain: {
+    name: 'Dit Train',
+    description: 'Visualize the 3:1 rhythm of perfectly timed Morse code.',
+    component: DitTrain,
+    icon: '🚄'
   }
 };
 
