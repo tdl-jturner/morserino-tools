@@ -175,11 +175,25 @@ h6 {
 
 .app-header h2 {
   margin: 0;
-  font-size: 1.2rem;
-  flex: 1;
-  text-align: center;
-  margin-right: 4rem;
-  /* offset for back button to center title */
+  /* Center title between back and settings buttons */
+  margin-right: -1rem;
+}
+
+.settings-btn {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.settings-btn:hover {
+  color: var(--base2);
+  transform: rotate(30deg);
 }
 
 .app-content {
@@ -355,4 +369,48 @@ input:focus+.slider-toggle {
 
 input:checked+.slider-toggle:before {
   transform: translateX(24px);
+}
+
+/* Modal / Overlay */
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+
+.settings-modal {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  color: var(--base2);
 }

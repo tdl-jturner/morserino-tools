@@ -18,12 +18,6 @@ const apps = {
     component: About,
     icon: 'ℹ️'
   },
-  settings: {
-    name: 'Settings',
-    description: 'Configure WPM, mode, Farnsworth ratio, and tone globally.',
-    component: Settings,
-    icon: '⚙️'
-  },
   cwPractice: {
     name: 'CW Practice',
     description: 'Practice sending Morse code with live adaptive stats.',
@@ -46,6 +40,7 @@ const apps = {
 
 export default function App() {
   const [currentAppId, setCurrentAppId] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const startApp = (id) => {
     initializeAudio();
@@ -56,15 +51,29 @@ export default function App() {
     const ActiveApp = apps[currentAppId].component;
     return html`
       <div className="app-container">
-        <header className="app-header">
+        <header className="app-header" style=${{ justifyContent: 'space-between' }}>
           <button className="back-btn" onClick=${() => setCurrentAppId(null)}>
             <span className="icon">←</span> Menu
           </button>
           <h2>${apps[currentAppId].name}</h2>
+          <button className="settings-btn" onClick=${() => setShowSettings(true)}>
+            ⚙️
+          </button>
         </header>
         <main className="app-content">
           <${ActiveApp} />
         </main>
+
+        ${showSettings && html`
+          <div className="settings-overlay" onClick=${() => setShowSettings(false)}>
+            <div className="settings-modal" onClick=${e => e.stopPropagation()}>
+              <button className="modal-close" onClick=${() => setShowSettings(false)}>×</button>
+              <div style=${{ padding: '1.5rem' }}>
+                <${Settings} />
+              </div>
+            </div>
+          </div>
+        `}
       </div>
     `;
   }

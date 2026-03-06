@@ -30,10 +30,9 @@ export default function Settings() {
     };
 
     return html`
-        <div className="tool-card">
-            <div className="tool-header">
-                <h3>Global Settings</h3>
-                <p className="tool-subtitle">These settings apply across all your Morse Tools.</p>
+        <div className="settings-panel">
+            <div className="tool-header" style=${{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                <h3 style=${{ margin: 0 }}>Global Settings</h3>
             </div>
             
             <div className="control-group">
@@ -43,7 +42,7 @@ export default function Settings() {
                         value=${settings.mode} 
                         onChange=${e => updateSetting('mode', parseInt(e.target.value))}
                         className="mode-select"
-                        style=${{ padding: '0.5rem', marginTop: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)' }}
+                        style=${{ padding: '0.6rem', marginTop: '0.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color-alt)', color: 'var(--text-primary)', width: '100%', fontSize: '1rem' }}
                     >
                         <option value="1">Straight Key</option>
                         <option value="2">Iambic A</option>
@@ -89,12 +88,11 @@ export default function Settings() {
                 </label>
             </div>
 
-            <div className="settings-panel instructions-panel" style=${{ marginTop: '2rem', padding: '1rem', borderTop: '1px solid var(--border-color)' }}>
-                <h3>Keyboard Shortcuts</h3>
-                <p>Use these keys to send Morse code in any tool:</p>
-                <ul style=${{ marginLeft: '1.5rem', marginTop: '0.5rem', color: 'var(--text-secondary)' }}>
-                    <li><kbd>Left Ctrl</kbd> or <kbd>[</kbd> for Dit (.)</li>
-                    <li><kbd>Right Ctrl</kbd> or <kbd>]</kbd> for Dah (-)</li>
+            <div className="instructions-panel" style=${{ marginTop: '2rem', padding: '1rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color-alt)', borderRadius: '8px' }}>
+                <h4 style=${{ marginBottom: '0.5rem' }}>Keyboard Shortcuts</h4>
+                <ul style=${{ marginLeft: '1.2rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    <li><kbd>Left Ctrl</kbd> or <kbd>[</kbd> for Dit</li>
+                    <li><kbd>Right Ctrl</kbd> or <kbd>]</kbd> for Dah</li>
                 </ul>
             </div>
         </div>
