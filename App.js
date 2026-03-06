@@ -4,6 +4,7 @@ import Settings from './apps/Settings.js';
 import CwPractice from './apps/CwPractice.js';
 import EchoTrainer from './apps/EchoTrainer.js';
 import DitTrain from './apps/DitTrain.js';
+import CodeGroups from './apps/CodeGroups.js';
 import About from './apps/About.js';
 import { initializeAudio } from './lib/sounder.js';
 
@@ -35,6 +36,12 @@ const apps = {
     description: 'Visualize the 3:1 rhythm of perfectly timed Morse code.',
     component: DitTrain,
     icon: '🚄'
+  },
+  codeGroups: {
+    name: 'Code Groups',
+    description: 'Practice copying random groups of letters, numbers, and symbols.',
+    component: CodeGroups,
+    icon: '🔢'
   }
 };
 
