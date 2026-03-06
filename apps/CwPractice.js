@@ -41,36 +41,6 @@ function getIdealTiming(letter, wpm) {
     return timings;
 }
 
-const TimingBar = ({ timings }) => {
-    if (!timings || timings.length === 0) return null;
-    const ownTotalDuration = timings.reduce((sum, t) => sum + Math.max(t.duration, 0), 0);
-    if (ownTotalDuration <= 0) return null;
-
-    return html`
-        <div style=${{ display: 'flex', height: '24px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', overflow: 'hidden', width: '100%', borderRadius: '4px' }}>
-            ${timings.map((t, idx) => {
-        const duration = Math.max(t.duration, 0);
-        const percentage = (duration / ownTotalDuration) * 100;
-        const isMark = t.type === 'mark';
-
-        // Enforce a minimum width so thin elements (especially gaps) remain visible
-        const minWidth = percentage > 0 ? (isMark ? '1px' : '3px') : '0';
-
-        return html`
-                    <div key=${idx} style=${{
-                flex: `0 0 ${percentage}%`,
-                width: percentage + '%',
-                minWidth: minWidth,
-                height: '100%',
-                backgroundColor: isMark ? 'var(--blue)' : 'var(--bg-color)',
-                opacity: isMark ? 0.9 : 1
-            }}></div>
-                `;
-    })}
-        </div>
-    `;
-};
-
 // ---- Guided Mode Sub-component ----
 function formatElapsed(ms) {
     const totalSeconds = Math.floor(ms / 1000);
@@ -132,16 +102,6 @@ export default function CwPractice() {
     const [input, setInput] = useState('');
     const [randomize, setRandomize] = useState(false);
     const [calculatedWpm, setCalculatedWpm] = useState('--');
-    const [showTiming, setShowTiming] = useState(false);
-
-    // Stats for timing table
-    const [stats, setStats] = useState({
-        dit: { avg: NaN, min: NaN, max: NaN, ideal: NaN },
-        dah: { avg: NaN, min: NaN, max: NaN, ideal: NaN }
-    });
-
-    // Graphical timings for the last letter
-    const [lastTimings, setLastTimings] = useState({ actual: [], ideal: [] });
 
     // --- Guided mode state ---
     const [guidedGroups, setGuidedGroups] = useState([]);
@@ -208,14 +168,7 @@ export default function CwPractice() {
 
     // Handle incoming decoded letter (called from decoder callback)
     const handleDecodedLetter = useCallback((letter, decoder) => {
-        updateStats(decoder);
-
-        if (letter && letter.trim()) {
-            const wpmToUse = settingsRef.current.wpm;
-            const ideal = getIdealTiming(letter, wpmToUse);
-            const actual = typeof decoder.getLastLetterTimings === 'function' ? decoder.getLastLetterTimings() : [];
-            setLastTimings({ ideal, actual });
-        }
+        updateWpm(decoder);
 
         const gs = guidedStateRef.current;
 
@@ -341,7 +294,7 @@ export default function CwPractice() {
         if (typeof sounderRef.current.setTone === 'function') sounderRef.current.setTone(tone);
         decoderRef.current.setFarnsworth(farnsworth);
 
-        updateStats(decoderRef.current);
+        updateWpm(decoderRef.current);
     }, [settings]);
 
     // When practice mode changes, set up the guided text
@@ -373,24 +326,10 @@ export default function CwPractice() {
         }
         // Clear freestyle input when switching
         setInput('');
-        setLastTimings({ actual: [], ideal: [] });
     }, [practiceMode, randomize]);
 
-    const updateStats = (decoder) => {
+    const updateWpm = (decoder) => {
         if (!decoder) return;
-
-        const idealDit = decoder.unit;
-        const idealDah = decoder.unit * 3;
-
-        const ditData = decoder.getStats ? decoder.getStats('dit') : { avg: NaN, min: NaN, max: NaN };
-        const dahData = decoder.getStats ? decoder.getStats('dah') : { avg: NaN, min: NaN, max: NaN };
-
-        setStats({
-            dit: { ideal: idealDit, ...ditData },
-            dah: { ideal: idealDah, ...dahData }
-        });
-
-        // WPM update
         if (settings.mode === 1) {
             const cwpm = decoder.calculateWpm();
             setCalculatedWpm(cwpm ? cwpm.toFixed(1) : '--');
@@ -402,7 +341,6 @@ export default function CwPractice() {
     const handleClear = () => {
         setInput('');
         setCalculatedWpm('--');
-        setLastTimings({ actual: [], ideal: [] });
         if (decoderRef.current && decoderRef.current.clearStats) {
             decoderRef.current.clearStats();
         }
@@ -488,64 +426,11 @@ export default function CwPractice() {
                 </div>
             `}
 
-            <div style=${{ marginTop: '1rem', display: 'flex', gap: '1rem', justifyContent: 'space-between' }}>
-                <button className="primary-btn" style=${{ padding: '0.5rem 1rem', width: 'auto' }} onClick=${handleClear}>${practiceMode === 'open' ? 'Clear' : 'Restart'}</button>
-            </div>
-
-            <div className="timing-collapsible" style=${{ marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                <button 
-                    onClick=${() => setShowTiming(!showTiming)} 
-                    style=${{ background: 'none', border: 'none', color: 'var(--accent-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', fontWeight: 'bold' }}
-                >
-                    <span style=${{ width: '20px', display: 'inline-block' }}>${showTiming ? '▼' : '▶'}</span>
-                    Show Timing Stats
-                </button>
-
-                ${showTiming && html`
-                    <div className="stats-panel" style=${{ marginTop: '1rem', backgroundColor: 'var(--bg-color-alt)', padding: '1rem', borderRadius: '8px' }}>
-                        <div style=${{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <div>
-                                <strong style=${{ color: 'var(--base1)' }}>Set WPM:</strong> <span style=${{ color: 'var(--accent-color)' }}>${settings.wpm}</span>
-                            </div>
-                            <div>
-                                <strong style=${{ color: 'var(--base1)' }}>Calculated WPM:</strong> <span style=${{ color: 'var(--accent-color)' }}>${calculatedWpm}</span>
-                            </div>
-                        </div>
-
-                        <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div className="stat-card" style=${{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px' }}>
-                                <h4 style=${{ margin: '0 0 0.5rem 0', color: 'var(--base2)' }}>Dit (ms)</h4>
-                                <div>Ideal: <span style=${{ color: 'var(--accent-color)' }}>${stats.dit.ideal ? stats.dit.ideal.toFixed(0) : '--'}</span></div>
-                                <div style=${{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                    Avg/Min/Max: ${!isNaN(stats.dit.avg) ? stats.dit.avg + ' / ' + stats.dit.min + ' / ' + stats.dit.max : '-- / -- / --'}
-                                </div>
-                            </div>
-
-                            <div className="stat-card" style=${{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px' }}>
-                                <h4 style=${{ margin: '0 0 0.5rem 0', color: 'var(--base2)' }}>Dah (ms)</h4>
-                                <div>Ideal: <span style=${{ color: 'var(--accent-color)' }}>${stats.dah.ideal ? stats.dah.ideal.toFixed(0) : '--'}</span></div>
-                                <div style=${{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                    Avg/Min/Max: ${!isNaN(stats.dah.avg) ? stats.dah.avg + ' / ' + stats.dah.min + ' / ' + stats.dah.max : '-- / -- / --'}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        ${(lastTimings.ideal.length > 0 || lastTimings.actual.length > 0) && html`
-                            <div className="timing-comparison" style=${{ marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                                <h4 style=${{ margin: '0 0 1rem 0', color: 'var(--base2)' }}>Last Character Timing</h4>
-                                
-                                <div style=${{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem', gap: '1rem' }}>
-                                    <span style=${{ width: '50px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Ideal:</span>
-                                    <div style=${{ flex: 1 }}><${TimingBar} timings=${lastTimings.ideal} /></div>
-                                </div>
-                                <div style=${{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <span style=${{ width: '50px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Actual:</span>
-                                    <div style=${{ flex: 1 }}><${TimingBar} timings=${lastTimings.actual} /></div>
-                                </div>
-                            </div>
-                        `}
-                    </div>
-                `}
+            <div style=${{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style=${{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                    Calculated WPM: <span style=${{ color: 'var(--accent-color)', fontWeight: 'bold' }}>${calculatedWpm}</span>
+                </div>
+                <button className="primary-btn" style=${{ padding: '0.5rem 1rem', width: 'auto', margin: 0 }} onClick=${handleClear}>${practiceMode === 'open' ? 'Clear' : 'Restart'}</button>
             </div>
         </div>
     `;
